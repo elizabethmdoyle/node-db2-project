@@ -24,10 +24,11 @@ const create = async (car) => {
 
   //destructure the values instead of return db('car').insert(car, ['id'])
 
-  const [id] = await db('cars').insert(car)
+  // const [id] = await db('cars').insert(car)
 
-  return getById(id)
-
+  // return getById(id)
+  return db('cars').insert(car)
+  .then(([id]) => getById(id))
 
 
 }
