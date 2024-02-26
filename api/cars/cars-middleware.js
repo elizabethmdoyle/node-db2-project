@@ -1,5 +1,4 @@
 const Car = require('./cars-model');
-const db = require('../../data/db-config');
 var vinValidator = require('vin-validator');
 
 exports.checkCarId = async (req, res, next) => {
@@ -10,7 +9,7 @@ exports.checkCarId = async (req, res, next) => {
     const car = await Car.getById(req.params.id);
 
     if(!car) {
-      next({status: 404, message: "car with id <car id> is not found" })
+      next({status:404,message: `car with id ${req.params.id} is not found` })
     } else {
       req.car = car
       next()
@@ -25,10 +24,24 @@ exports.checkCarPayload = (req, res, next) => {
 
   //returns a status 400 with a { message: "<field name> is missing" } if any required field is missing.
 
-  const error = {status:400}
-  const {vin, make, model, mileage, title, transmission } = req.body;
-
-
+ 
+  if(!req.body.vin) return next({
+    status:400,
+    message: "vin is missing"
+  })
+  if(!req.body.make) return next({
+    status:400,
+    message: "make is missing"
+  })
+  if(!req.body.model) return next({
+    status:400,
+    message: "model is missing"
+  })
+  if(!req.body.mileage) return next({
+    status:400,
+    message: "mileage is missing"
+  })
+  next()
 
 }
 
@@ -38,17 +51,26 @@ exports.checkVinNumberValid = async (req, res, next) => {
 
   // var isValidVin = vinValidator.validate('11111111111111111'); // true
 
-  try {
-    const validVin = await('cars').where('vin', req.body.vin.trim()).first()
+  // try {
+  //   const validVin = await Car.getByVin(req.body.vin)
+    
+  //   if(!validVin == vinValidator.validate(validVin)) {
+  //     next({ status: 400, message:`vin ${validVin} is invalid ` })
+  //   } else {
+  //     next()
+  //   }
+  // } catch (err) {
+  //   next(err)
+  // }
 
-    if(validVin == vinValidator.validate(validVin)) {
-      next({ status: 400, message:"vin <vin number> is invalid" })
-    } else {
-      next()
-    }
-  } catch (err) {
-    next(err)
+  if(vinValidator.validate(req.body.vin)){
+    next()
+  }else {
+    next({
+      status: 400,
+      message: `vin ${req.body.vin} is invalid`})
   }
+
 }
 
 exports.checkVinNumberUnique = async (req, res, next) => {
@@ -57,12 +79,15 @@ exports.checkVinNumberUnique = async (req, res, next) => {
   //checkVinNumberUnique returns a status 400 with a { message: "vin <vin number> already exists" } if the vin number already exists in the database.
 
   try {
-    const number = await('cars').where('vin', req.body.vin.trim()).first()
-
-    if(number) {
-      next({ status: 400, message:"vin <vin number> already exists" })
+    const number = await Car.getByVin(req.body.vin)
+    
+    if(!number) {
+     next()
     } else {
-      next()
+      next({
+        status:400,
+        message:`vin ${req.body.vin} already exists`
+      })
     }
   } catch (err) {
     next(err)
